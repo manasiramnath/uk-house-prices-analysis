@@ -6,10 +6,10 @@ if (.Platform$OS.type == "unix") {
 
 
 dir <- list(
-  raw = file.path(z_dir, "Manasi Ramnath/interview/1. raw"),
-  cache = file.path(z_dir, "Manasi Ramnath/interview/2. cache"),
-  output = file.path(z_dir, "Manasi Ramnath/interview/3. output"),
-  scripts = file.path(z_dir, "Manasi Ramnath/repos/uk-house-prices-analysis/scripts")
+  raw = file.path(z_dir, "Manasi Ramnath/UK House Prices/1. raw"),
+  cache = file.path(z_dir, "Manasi Ramnath/UK House Prices/2. cache"),
+  output = file.path(z_dir, "Manasi Ramnath/UK House Prices/3. output"),
+  scripts = file.path("scripts")
 )
 
 rm(z_dir)
