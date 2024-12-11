@@ -25,3 +25,4 @@ from_output <- function(name, folder){
   data <- read_rds(file.path(dir$output, folder, paste0(name, '.RDS')))
   return(data)
 }
+
