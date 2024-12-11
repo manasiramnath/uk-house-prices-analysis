@@ -53,37 +53,45 @@ for (f in files) {
     if (grepl("CTSOP4_1", f)) {ctsop4_1_list[[f]] <- data}
 
 }
-
 ctsop3_1_filtered <- lapply(ctsop3_1_list, function(df) {
     df |>
         filter(band == 'All') |>
         filter(geography == 'LSOA')  |>
-        select(-c(band, geography, ba_code))  |> # all same values
+        select(-c(band, geography, ba_code, area_name))  |>
         #replace - with 0
-        mutate(across(!c(ecode, area_name, year), ~replace(., . == "-", 0))) |>
-        mutate(across(!c(ecode, area_name, year), as.numeric))
+        mutate(across(!c(ecode, year), ~replace(., . == "-", 0))) |>
+        mutate(across(!c(ecode, year), as.numeric))
 })
 
 ctsop4_1_filtered <- lapply(ctsop4_1_list, function(df) {
     df %>% 
         filter(band == 'All') |>
         filter(geography == 'LSOA') |>
-        select(-c(band, geography, ba_code)) |>
-         # if values in bp columns are - read as NA
-        mutate(across(!c(ecode, area_name, year), as.character)) |>
-        mutate(across(!c(ecode, area_name, year), ~replace(., . == "-", 0))) |>
-        mutate(across(!c(ecode, area_name, year), as.numeric))
+        select(-c(band, geography, ba_code, area_name)) |>
+        mutate(across(!c(ecode, year), as.character)) |>
+        #replace - with 0
+        mutate(across(!c(ecode, year), ~replace(., . == "-", 0))) |>
+        mutate(across(!c(ecode, year), as.numeric))
 })
 
+ctsop3_1_colnames <- lapply(ctsop3_1_filtered, colnames)
+ctsop4_1_colnames <- lapply(ctsop4_1_filtered, colnames)
+
+ctsop3_1_unique_cols <- Reduce(intersect, ctsop3_1_colnames)
+ctsop4_1_unique_cols <- Reduce(intersect, ctsop4_1_colnames)
+
+setdiff(ctsop3_1_unique_cols, ctsop4_1_unique_cols) # columns unique to ctsop3_1
+setdiff(ctsop4_1_unique_cols, ctsop3_1_unique_cols) # columns unique to ctsop4_1
 
 # bind  rows
-ctsop3_1 <- bind_rows(ctsop3_1_filtered)
+ctsop3_1 <- bind_rows(ctsop3_1_filtered) |> select(-all_properties)
 ctsop4_1 <- bind_rows(ctsop4_1_filtered)
 # merge ctsop3_1_cleaned and ctsop4_1_cleaned
 cols_to_merge <- intersect(names(ctsop3_1), names(ctsop4_1))
 ctsop_merged <- ctsop3_1 |>
 left_join(ctsop4_1, by = cols_to_merge, suffix = c("_ctsop3", "_ctsop4"))
 
+skimr::skim(ctsop_merged)
 
 # save to cache
 to_cache(ctsop3_1, "ctsop3_1", "clean")

@@ -5,16 +5,24 @@ median_price <- from_cache("median_price", "clean")
 ctsop_merged <- from_cache("ctsop_merged", "clean")
 
 ctsop_merged <- ctsop_merged |>
-rename(lsoa_code = ecode)
+  rename(lsoa_code = ecode) |>
+  mutate(lsoa_code = str_trim(lsoa_code)) |>  
+  mutate(lsoa_code = toupper(lsoa_code))  
 
-data1 <- median_price |>
-left_join(ctsop_merged, by = c("lsoa_code", "year"))
+median_price <- median_price |>
+  mutate(lsoa_code = str_trim(lsoa_code)) |>  
+  mutate(lsoa_code = toupper(lsoa_code))
+common_columns <- intersect(names(median_price), names(ctsop_merged))
+
+ctsop_with_prices <- median_price |>
+  inner_join(ctsop_merged, by = c("lsoa_code", "year"))
 
 # 2. data1 and journey_times
 journey_times <- from_cache("journey_times", "clean")
-data2 <- data1 |>
-left_join(journey_times, by = "lsoa_code")
-rm(data1)
+ctsop_with_prices_journey <- ctsop_with_prices |>
+  inner_join(journey_times, by = "lsoa_code") |>
+  select(-c(la_name,la_code))
+
 ## merging datasets with LAD granularity
 ## =====================================================================================================================
 # 3. macro_data and population
@@ -25,9 +33,10 @@ rename(lad = ladcode21) |>
 mutate(year = as.character(year))
 
 macro <- macro |>
-filter(old_shp == 1)
+filter(old_shp == 1) |>
+select(-old_shp)
 
-data3 <- population |>
+macro_pop <- population |>
 left_join(macro, by = c("lad", "year"))
 
 # mapping LSOA to LAD
@@ -36,10 +45,12 @@ lsoa_lad <- codes |>
 select(lsoa11cd, ladcd) |>
 distinct()
 # keep only matching LSOAs
-data3_with_lsoa <- lsoa_lad |>
-  left_join(data3, by = c("ladcd" = "lad")) |>
+macro_pop_lsoa <- lsoa_lad |>
+  inner_join(macro_pop, by = c("ladcd" = "lad")) |>
   select(-ladcd, laname21) |>
-  mutate(year = as.factor(year))
+  mutate(year = as.factor(year)) |>
+  select(-c(area, laname21)) |>
+  rename(lsoa_code = lsoa11cd)
 
 ## merging dataset with MSOA granularity
 ## ====================================================================================================================
@@ -52,22 +63,20 @@ select(lsoa11cd, msoa11cd) |>
 distinct()
 
 # add lsoa to hh earnings
-data4 <- data2 |>
-left_join(hh_earnings, by = c("lsoa_code" = "msoa_code", "year" = "year")) |>
-mutate(year = as.factor(year))
-rm(data2)
+hh_earnings_with_lsoa <- hh_earnings |>
+  left_join(lsoa_msoa, by = c("msoa_code" = "msoa11cd")) |>
+  mutate(year = as.factor(year))  |>
+  select(-c(msoa_code, msoa_name)) |>
+  rename(lsoa_code = lsoa11cd)
+# convert year to a factor in all datasets
+ctsop_with_prices_journey <- ctsop_with_prices_journey |>
+  mutate(year = as.factor(year))
 
-# merge data3_with_lsoa and data4
-merged_data <- data4 |>
-left_join(data3_with_lsoa, by = c("lsoa_code" = "lsoa11cd", "year"))
-
-
-merged_data_5y <- merged_data |>
-filter(year %in% c('2019', '2020', '2021', '2022', '2023'))
-
-
-to_cache(merged_data, "final_merged_data", "clean")
-to_cache(merged_data_5y, "final_merged_data_5y", "clean")
+final_merged_data <- ctsop_with_prices_journey |>
+  left_join(hh_earnings_with_lsoa, by = c("lsoa_code", "year")) |>
+  left_join(macro_pop_lsoa, by = c("lsoa_code", "year"))
 
 
-from_cache("final_merged_data", "clean") |> skimr::skim()
+final_merged_data_5y <- final_merged_data |>
+filter(year %in% c('2019', '2020', '2021', '2022', '2023')) |>
+droplevels()

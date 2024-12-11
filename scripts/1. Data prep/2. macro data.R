@@ -46,7 +46,7 @@ set_names(unemployment_raw[6, ]) |>
 clean_names() |>
 # remove original row
 slice(-1) |>
-# shp indicator: if 19 is in area column then it is a region
+# shp indicator: if 19 is in area column then it is old
 mutate(old_shp = ifelse(str_detect(area, '19'), 1, 0)) |> 
 rename(lad = mnemonic) |>
 # drop columns
