@@ -124,10 +124,10 @@ select(median_price, any_of(vars_corr))
 ## plotting relationship between annual income and median price
 ## ====================================================================
 price_income <- ggplot(data, aes(x = net_annual_income_before_housing_costs, y = median_price)) +
-  geom_point(color = 'darkblue') +  
+  geom_point(color = '#16469E') +  
   # add a trend line
-  geom_smooth(method = "lm", se = FALSE, color = "darkorange") +
-  labs(title = "Moderate Positive Correlation Between Median Price and Household Earnings",
+  geom_smooth(method = "lm", se = FALSE, color = "#CC7F0C") +
+  labs(title = "Moderate Positive Correlation Between Median Price and \nHousehold Earnings",
        x = "Annual Income",
        y = "Median Price") +
   theme_minimal() +
@@ -135,13 +135,14 @@ price_income <- ggplot(data, aes(x = net_annual_income_before_housing_costs, y =
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 price_income
 
+
 ## plotting relationship between median price and unemployment rate
 ## ====================================================================
 price_unemployment <- ggplot(data, aes(x = unemployment_rate, y = median_price)) +
-  geom_point(color = 'forestgreen') +  
+  geom_point(color = '#428F51') +  
   # add a trend line
-  geom_smooth(method = "lm", se = FALSE, color = "darkred") +
-  labs(title = "Small Negative Correlation Between Median Price and Unemployment Rates",
+  geom_smooth(method = "lm", se = FALSE, color = "#C94D2F") +
+  labs(title = "Small Negative Correlation Between Median Price and \nUnemployment Rates",
        x = "Employment Rate",
        y = "Median Price") +
   theme_minimal() +

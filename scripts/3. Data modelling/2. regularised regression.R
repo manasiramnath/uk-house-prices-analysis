@@ -89,15 +89,18 @@ data <- read_rds('final_merged_data_cleaned.RDS')
 geog_cols <- c('local_authority_code', 'local_authority_name', 'lsoa_code', 'lsoa_name')
 # random sample of data
 set.seed(123)
-data_sample <- data[sample(nrow(data), nrow(data) * 0.01), ]
+data_sample <- data %>%
+  group_by(year) %>%
+  sample_frac(0.01) %>% # sample 10% from each year
+  ungroup()
 
-train_test_data <- split_data(data_sample, 'region')
+train_test_data <- split_data(data_sample, 'year')
 data_train <- train_test_data$train_data
 data_test <- train_test_data$test_data
 
-reg_mod <- fit_reg('median_price', 'region', 
+reg_mod <- fit_reg('median_price', 'year', 
                    data_train,
-                   mixture_range = c(0,1),
+                   mixture_range = 1,
                    penalty_range = c(1e-6, 0.1))
 
 tune_res <- reg_mod[[1]]
@@ -111,9 +114,14 @@ tune_res |>
   select(mean, penalty, mixture) |> 
   pivot_longer(penalty:mixture, names_to = 'parameter', values_to = 'value') |>
   ggplot(aes(x = value, y = mean, color = parameter)) +
-  geom_point(show.legend = FALSE) +
-  facet_wrap(~parameter, scales = 'free_x') +
-  labs(x = NULL, y = 'RMSE')
+  geom_point(show.legend = FALSE, size = 2) +  
+  facet_wrap(~parameter, scales = 'free_x', 
+             labeller = as_labeller(c(penalty = "Proportion of penalty", 
+                                      mixture = "Proportion of L1 regularisation"))) +
+  labs(x = NULL, y = 'RMSE', 
+       title = "Tuning Results: RMSE vs Parameters") +
+  scale_color_manual(values = c("penalty" = "#C43535", "mixture" = "#66BBBB")) +  
+  theme(strip.text = element_text(size = 11, face = "bold")) 
   
 non_zero_coefs <- tidy(reg_mod_fit) |> filter(abs(estimate) > 0)
 # write to csv
@@ -146,3 +154,4 @@ predictions <- predict(reg_mod_fit, data_test) |>
 test_predictions <- augment(reg_mod_fit, data_test)
 evaluation_metrics <- test_predictions |>
   metrics(truth = median_price, estimate = .pred)
+write_csv(evaluation_metrics, 'reg_evaluation_metrics.csv')

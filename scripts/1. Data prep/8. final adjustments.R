@@ -12,10 +12,10 @@ data_skimmed <- skimr::skim(data)
 
 ## missing values
 ## =====================================================================================================================
-missings_vars <- data %>%
-  mutate_all(~as.character(.)) %>%
+missings_vars <- data |>
+  mutate_all(~as.character(.)) |>
   pivot_longer(!c(local_authority_code, local_authority_name, lsoa_code, lsoa_name, year),
-               names_to = 'variable') %>%
+               names_to = 'variable') |>
   filter(is.na(value))
 
 cat('missing values: \n')
@@ -33,21 +33,21 @@ data <- data  |>
 mutate(median_price = round(median_price / 1000))
 
 # impute variables starting with cpi with mean 
-cpi_vars <- data %>%
-  select(starts_with('cpi')) %>%
+cpi_vars <- data |>
+  select(starts_with('cpi')) |>
   colnames()
 data <- data  |>
 mutate(across(all_of(cpi_vars), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
 # Calculate missingness by year for the selected variables
-missingness_by_year <- data %>%
+missingness_by_year <- data |>
   # Select the relevant columns (net_annual_income, total_population, unemployment_rate, and variables starting with 'cpi')
-  select(year, net_annual_income_before_housing_costs, total_population, unemployment_rate, starts_with('cpi')) %>%
-  group_by(year) %>%
+  select(year, net_annual_income_before_housing_costs, total_population, unemployment_rate, starts_with('cpi')) |>
+  group_by(year) |>
   # Summarise all by calculating the number of missing values
-  summarise(across(everything(), ~sum(is.na(.)))) %>%
+  summarise(across(everything(), ~sum(is.na(.)))) |>
   # Convert the counts to percentages of missing values
-  mutate(across(-year, ~(. / n()) * 100)) %>%
+  mutate(across(-year, ~(. / n()) * 100)) |>
   # Reshape the data to long format (gather the variables)
   pivot_longer(cols = -year, names_to = "variable", values_to = "missingness")
 
@@ -55,8 +55,8 @@ missingness_by_year <- data %>%
 data <- data  |>
 mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
-data <- data %>%
-  mutate(unemployment_rate = as.numeric(unemployment_rate)) %>%
+data <- data |>
+  mutate(unemployment_rate = as.numeric(unemployment_rate)) |>
   mutate(unemployment_rate = ifelse(is.na(unemployment_rate), mean(unemployment_rate, na.rm = TRUE), unemployment_rate))
 
 sum(is.na(data))
@@ -66,18 +66,18 @@ sum(is.na(data))
 ## =====================================================================================================================
 cat('variables with no variance: \n')
 # get column names with no variance
-no_variance <- data %>%
-  select(where(~ length(unique(.)) == 1)) %>%
+no_variance <- data |>
+  select(where(~ length(unique(.)) == 1)) |>
   colnames()
 print(no_variance)
-data <- data %>%
+data <- data |>
   select(where(~ length(unique(.)) > 1))
 
 
 ## calculate spearman correlation
 ## =====================================================================================================================
 # random 10% sample
-data_subset <- data %>% sample_frac(0.1)
+data_subset <- data |> sample_frac(0.1)
 
 print('Calculating spearman correlation')
 spearman_test <- function(x, y) {
@@ -85,11 +85,11 @@ spearman_test <- function(x, y) {
   list(corr = result$estimate, p_value = result$p.value)
 }
 
-data_num <- data_subset %>% select_if(is.numeric)
+data_num <- data_subset |> select_if(is.numeric)
 
 #correlations <- combn(
 #  names(data_num), 
-#  2, simplify = FALSE) %>%
+#  2, simplify = FALSE) |>
 #  map_dfr(~ {
 #    test_result <- spearman_test(data_num[[.x[1]]], data_num[[.x[2]]])
 #    tibble(
@@ -101,8 +101,8 @@ data_num <- data_subset %>% select_if(is.numeric)
 #  })
 
 # subset to variables with correlation > 0.7
-# cor_var <- correlations %>%
-#  filter(corr > 0.7) %>% 
+# cor_var <- correlations |>
+#  filter(corr > 0.7) |> 
 #  select(-p_value)
 
 # write correlations to csv
@@ -112,12 +112,12 @@ data_num <- data_subset %>% select_if(is.numeric)
 cor_var <- read_csv(file.path(dir$output, 'correlations.csv'))
 
 # drop var1
-dropped <- cor_var %>%
-  select(var1) %>%
-  distinct() %>%
+dropped <- cor_var |>
+  select(var1) |>
+  distinct() |>
   pull()
 
-data <- data %>%
+data <- data |>
   select(-all_of(dropped))
 
 final_merged_data_cleaned <- data
