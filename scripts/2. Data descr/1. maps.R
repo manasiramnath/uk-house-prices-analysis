@@ -2,7 +2,6 @@
 
 data <- from_cache("final_merged_data_cleaned", "clean")
 shp <- read_sf(file.path(dir$raw, "shapefiles", "shapefiles_11", "LSOA_Dec_2011_PWC_in_England_and_Wales.shp"))
-
 ## =====================================================================================================================
 ## overview of prices over time (2014-2021)
 ## =====================================================================================================================

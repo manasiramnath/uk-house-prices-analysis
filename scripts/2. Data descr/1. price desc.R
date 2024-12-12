@@ -1,4 +1,3 @@
-
 ## script to describe house prices and preliminary EDA
 ## =====================================================================================================================
 #install.packages("reticulate", repos = "http://cran.us.r-project.org")
@@ -20,12 +19,40 @@ region_cols = c(
 # load data
 #data <- from_cache("final_merged_data_cleaned_5y", "clean")
 data <- final_merged_data_cleaned
+data <- readRDS("final_merged_data_cleaned.RDS")
 
+## distribution of house prices
+## =====================================================================================================================
+# facet wrap median price before and after log median price
+
+
+price_dist <- ggplot(data, aes(x = median_price)) +
+  geom_histogram(fill = '#555599', color = "black", bins = 30) +
+  labs(
+       x = "Median Price",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(size = 16, face = "bold"))
+
+log_price_dist <- ggplot(data, aes(x = log(median_price))) +
+  geom_histogram(fill = '#555599', color = "black", bins = 30) +
+  labs(
+       x = "Log Median Price",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        plot.title = element_text(size = 16, face = "bold"))
+grid.arrange(price_dist, log_price_dist, ncol=2, top = "Distribution of median house prices are more normally distributed after log transformation")
 ## house prices over time
 ## =====================================================================================================================
 
-agg_data <- data %>%
-  group_by(year) %>%
+agg_data <- data |>
+  group_by(year) |>
   summarise(avg_median_price = mean(median_price, na.rm = TRUE), .groups = "drop")
 
 price_over_time_plot <- ggplot(agg_data, aes(x = factor(year), y = avg_median_price)) +
@@ -40,7 +67,7 @@ price_over_time_plot <- ggplot(agg_data, aes(x = factor(year), y = avg_median_pr
         plot.title = element_text(size = 16, face = "bold"))
 
 price_over_time_plot <- ggplotly(price_over_time_plot)
-price_over_time_plot <- price_over_time_plot %>%
+price_over_time_plot <- price_over_time_plot |>
   layout(
     title = list(text = "House prices have been rising steadily over the years", font = list(size = 20)),
     xaxis = list(title = "Year", tickfont = list(size = 14)),
@@ -50,9 +77,9 @@ price_over_time_plot <- price_over_time_plot %>%
 
 price_over_time_plot
 ## =====================================================================================================================
-price_region <- data %>%
-  group_by(region, year) %>%
-  summarise(avg_median_price = mean(median_price, na.rm = TRUE)) %>%
+price_region <- data |>
+  group_by(region, year) |>
+  summarise(avg_median_price = mean(median_price, na.rm = TRUE)) |>
   ungroup()
 
 price_region_plot <- ggplot(price_region, aes(x = year, y = avg_median_price, color = region, group = region)) +
@@ -96,38 +123,29 @@ select(median_price, any_of(vars_corr))
 
 ## plotting relationship between annual income and median price
 ## ====================================================================
-
-# Create the ggplot
-p <- ggplot(data, aes(x = net_annual_income_before_housing_costs, y = median_price, color = as.factor(year))) +
-  geom_point() +  # Scatter plot
-  labs(title = "Relationship Between Annual Income and Median Price (Last 5 Years)",
-       x = "Annual Income",
-       y = "Median Price",
-       color = "Year") +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-# Convert the ggplot to an interactive plot
-interactive_plot <- ggplotly(p)
-
-# Show the interactive plot
-interactive_plot
-
-library(ggplot2)
-library(plotly)
-
-# Create the ggplot without coloring by year
-p <- ggplot(data, aes(x = net_annual_income_before_housing_costs, y = median_price)) +
-  geom_point() +  # Scatter plot
-  labs(title = "Relationship Between Annual Income and Median Price",
+price_income <- ggplot(data, aes(x = net_annual_income_before_housing_costs, y = median_price)) +
+  geom_point(color = 'darkblue') +  
+  # add a trend line
+  geom_smooth(method = "lm", se = FALSE, color = "darkorange") +
+  labs(title = "Moderate Positive Correlation Between Median Price and Household Earnings",
        x = "Annual Income",
        y = "Median Price") +
-  theme_minimal()
+  theme_minimal() +
+  # remove grid
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+price_income
 
-# Convert the ggplot to an interactive plot
-interactive_plot <- ggplotly(p)
+## plotting relationship between median price and unemployment rate
+## ====================================================================
+price_unemployment <- ggplot(data, aes(x = unemployment_rate, y = median_price)) +
+  geom_point(color = 'forestgreen') +  
+  # add a trend line
+  geom_smooth(method = "lm", se = FALSE, color = "darkred") +
+  labs(title = "Small Negative Correlation Between Median Price and Unemployment Rates",
+       x = "Employment Rate",
+       y = "Median Price") +
+  theme_minimal() +
+  # remove grid
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-# Show the interactive plot
-interactive_plot
-
-
+price_unemployment

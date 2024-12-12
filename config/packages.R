@@ -2,7 +2,6 @@ library(conflicted)
 # conflicted packcages
 conflicts_prefer(dplyr::filter,
                  dplyr::select,
-                 shinydashboard::box,
                  plotly::layout,
                  dplyr::recode)
 
