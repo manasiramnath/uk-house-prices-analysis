@@ -3,12 +3,11 @@
 ## =====================================================================================================================
 
 # loading merged data
-#data <- from_cache("final_merged_data", "clean")
-data <- final_merged_data
+data <- from_cache("final_merged_data", "clean")
 original_data <- data
 
 # skim the data
-data_skimmed <- skimr::skim(data)
+#data_skimmed <- skimr::skim(data)
 
 ## missing values
 ## =====================================================================================================================
@@ -32,35 +31,44 @@ ungroup()
 data <- data  |>
 mutate(median_price = round(median_price / 1000))
 
-# impute variables starting with cpi with mean 
-cpi_vars <- data |>
-  select(starts_with('cpi')) |>
-  colnames()
-data <- data  |>
-mutate(across(all_of(cpi_vars), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-# Calculate missingness by year for the selected variables
+# calculate missingness by year for the selected variables
 missingness_by_year <- data |>
-  # Select the relevant columns (net_annual_income, total_population, unemployment_rate, and variables starting with 'cpi')
-  select(year, net_annual_income_before_housing_costs, total_population, unemployment_rate, starts_with('cpi')) |>
+  # select the relevant columns (net_annual_income, total_population, unemployment_rate, and variables starting with 'cpi')
+  select(year, total_population, net_annual_income_before_housing_costs, unemployment_rate) |>
   group_by(year) |>
-  # Summarise all by calculating the number of missing values
+  # summarise all by calculating the number of missing values
   summarise(across(everything(), ~sum(is.na(.)))) |>
-  # Convert the counts to percentages of missing values
+  # convert the counts to percentages of missing values
   mutate(across(-year, ~(. / n()) * 100)) |>
-  # Reshape the data to long format (gather the variables)
   pivot_longer(cols = -year, names_to = "variable", values_to = "missingness")
 
-# replace remaining missing values with mean
+# use linear interpolation to fill missing income values
 data <- data  |>
-mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+group_by(local_authority_code) |>
+mutate(net_annual_income_before_housing_costs = na.approx(net_annual_income_before_housing_costs, rule = 2)) |>
+ungroup()
 
+# replace na in "avg_mortgage_var"   "avg_mortgage_fixed" "avg_bank_rate"  with mean
+data <- data |>
+  mutate(avg_mortgage_var = as.numeric(avg_mortgage_var)) |>
+  mutate(avg_mortgage_fixed = as.numeric(avg_mortgage_fixed)) |>
+  mutate(avg_bank_rate = as.numeric(avg_bank_rate)) |>
+  mutate(avg_mortgage_var = ifelse(is.na(avg_mortgage_var), mean(avg_mortgage_var, na.rm = TRUE), avg_mortgage_var)) |>
+  mutate(avg_mortgage_fixed = ifelse(is.na(avg_mortgage_fixed), mean(avg_mortgage_fixed, na.rm = TRUE), avg_mortgage_fixed)) |>
+  mutate(avg_bank_rate = ifelse(is.na(avg_bank_rate), mean(avg_bank_rate, na.rm = TRUE), avg_bank_rate))
+
+# replace missing unemployment rate with the mean
 data <- data |>
   mutate(unemployment_rate = as.numeric(unemployment_rate)) |>
   mutate(unemployment_rate = ifelse(is.na(unemployment_rate), mean(unemployment_rate, na.rm = TRUE), unemployment_rate))
 
-sum(is.na(data))
+# drop cpi variables
+data <- data  |>
+  select(-starts_with('cpi'))
 
+# drop total_population
+data <- data  |>
+  select(-total_population)
 
 ## variables with no variance
 ## =====================================================================================================================
@@ -76,19 +84,19 @@ data <- data |>
 
 ## calculate spearman correlation
 ## =====================================================================================================================
-# random 10% sample
-data_subset <- data |> sample_frac(0.1)
-
-print('Calculating spearman correlation')
-spearman_test <- function(x, y) {
-  result <- cor.test(x, y, method = "spearman")
-  list(corr = result$estimate, p_value = result$p.value)
-}
-
-data_num <- data_subset |> select_if(is.numeric)
-
-#correlations <- combn(
-#  names(data_num), 
+# random 10% sample (computational issues)
+# data_subset <- data |> sample_frac(0.1)
+# 
+# print('Calculating spearman correlation')
+# spearman_test <- function(x, y) {
+#   result <- cor.test(x, y, method = "spearman")
+#   list(corr = result$estimate, p_value = result$p.value)
+# }
+# 
+# data_num <- data_subset |> select_if(is.numeric)
+# 
+# correlations <- combn(
+#  names(data_num),
 #  2, simplify = FALSE) |>
 #  map_dfr(~ {
 #    test_result <- spearman_test(data_num[[.x[1]]], data_num[[.x[2]]])
@@ -99,26 +107,27 @@ data_num <- data_subset |> select_if(is.numeric)
 #      p_value = test_result$p_value
 #    )
 #  })
-
-# subset to variables with correlation > 0.7
+# 
+# # subset to variables with correlation > 0.7
 # cor_var <- correlations |>
-#  filter(corr > 0.7) |> 
+#  filter(corr > 0.7) |>
 #  select(-p_value)
 
-# write correlations to csv
-#write_csv(correlations, file.path(dir$output, 'allcorrelations.csv'))
-#write_csv(cor_var, file.path(dir$output, 'correlations.csv'))
+#write correlations to csv
+#write_csv(correlations, file.path(dir$output, 'desc', 'allcorrelations.csv'))
+#write_csv(cor_var, file.path(dir$output, 'desc', 'correlations.csv'))
 # read high correlations
-cor_var <- read_csv(file.path(dir$output, 'correlations.csv'))
+cor_var <- read_csv(file.path(dir$output, 'desc', 'correlations.csv'))
 
-# drop var1
-dropped <- cor_var |>
-  select(var1) |>
-  distinct() |>
-  pull()
+vars_to_drop <- c("bungalow_total", "flat_mais_total", "house_detached_total", 
+                  "house_semi_total", "house_terraced_total", "unknown", "house_detached_3", 
+                  "avg_mortgage_var", "bp_unkw", "ss_cart", "ss_walkt", "ss_cyct", 
+                  "town_cart", "town_walkt", "town_cyct", "hosp_cart", "hosp_walkt", "hosp_cyct", 
+                  "food_cyct", "food_cart", "food_walkt", "gp_cart", "gp_walkt", "gp_cyct")
 
 data <- data |>
-  select(-all_of(dropped))
+  select(-all_of(vars_to_drop))
+
 
 final_merged_data_cleaned <- data
 

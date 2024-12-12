@@ -1,30 +1,24 @@
 ## script to describe house prices and preliminary EDA
 ## =====================================================================================================================
-#install.packages("reticulate", repos = "http://cran.us.r-project.org")
-#library(reticulate)
-
 # set colour palette
 region_cols = c(
-  'East' = colours2020_named[['blue 2']],  
-  'East Midlands' = colours2020_named[['dark blue']],
-  'London' =  colours2020_named[['dark red 1']],
-  'North East' = colours2020_named[['orange']],
-  'North West' = colours2020_named[['dark red']],
-  'South East' = colours2020_named[['green']],
-  'South West' = colours2020_named[['blue']],
-  'West Midlands' = colours2020_named[['purple']],
-  'Yorkshire and The Humber' = colours2020_named[['purple -1']]
+  'East' = '#6BABB6',  
+  'East Midlands' = "#003D4C",
+  'London' =  "#B5394D",
+  'North East' = "#DE7C00",
+  'North West' = "#971B2F",
+  'South East' = "#3D441E",
+  'South West' = "#2F6F7A",
+  'West Midlands' = '#5D295F',
+  'Yorkshire and The Humber' = "#7B477D"
 )
 
 # load data
-#data <- from_cache("final_merged_data_cleaned_5y", "clean")
-data <- final_merged_data_cleaned
-data <- readRDS("final_merged_data_cleaned.RDS")
+data <- from_cache("final_merged_data_cleaned", "clean")
 
 ## distribution of house prices
 ## =====================================================================================================================
 # facet wrap median price before and after log median price
-
 
 price_dist <- ggplot(data, aes(x = median_price)) +
   geom_histogram(fill = '#555599', color = "black", bins = 30) +
@@ -56,7 +50,7 @@ agg_data <- data |>
   summarise(avg_median_price = mean(median_price, na.rm = TRUE), .groups = "drop")
 
 price_over_time_plot <- ggplot(agg_data, aes(x = factor(year), y = avg_median_price)) +
-  geom_bar(stat = "identity", fill = colours2020_named[['blue 2']], color = "black", width = 0.7) +
+  geom_bar(stat = "identity", fill = "#568E99", color = "black", width = 0.7) +
   labs(title = "House prices have been rising steadily over the years",
        x = "Year",
        y = "Average Median Price") +
@@ -76,6 +70,13 @@ price_over_time_plot <- price_over_time_plot |>
   )
 
 price_over_time_plot
+
+# get table of house prices over time
+price_over_time_table <- data |>
+  group_by(year) |>
+  summarise(avg_median_price = mean(median_price, na.rm = TRUE)) |>
+  arrange(year)
+#write_csv(price_over_time_table, file.path(dir$output, desc, 'price_over_time_table.csv'))
 ## =====================================================================================================================
 price_region <- data |>
   group_by(region, year) |>
@@ -100,11 +101,17 @@ price_region_plot <- ggplot(price_region, aes(x = year, y = avg_median_price, co
 price_region_plot <- ggplotly(price_region_plot)
 
 price_region_plot
+# get table of house prices over time by region
+price_region_table <- data |>
+  group_by(region, year) |>
+  summarise(avg_median_price = mean(median_price, na.rm = TRUE)) |>
+  arrange(region, year)
 
-## visualising correlations
+#write.csv(price_region_table, file.path(dir$output, desc, "price_region_table.csv"))
+## visualising correlations with price 
 ## ===============================================================================
 
-all_corr <- read_csv(file.path(dir$output, 'allcorrelations.csv'))  |>
+all_corr <- read_csv('allcorrelations.csv')  |>
 filter(corr < 0.7)  |>
 arrange(desc(corr))
 
@@ -118,8 +125,7 @@ vars_corr <- median_corr  |>
 mutate(corr_int = ifelse(abs(corr) >= 0.2, 1, 0))  |>
 filter(corr_int == 1)
 
-corr_data <- data  |>
-select(median_price, any_of(vars_corr))
+#write.csv(vars_corr, file.path(dir$output, desc, 'vars_corr_price.csv'))))
 
 ## plotting relationship between annual income and median price
 ## ====================================================================

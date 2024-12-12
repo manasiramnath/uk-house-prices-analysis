@@ -1,3 +1,7 @@
+## script to run regularised regression (elastic net)
+# - feature importance
+# - feature selection
+
 ## function to split data into train and test sets
 split_data <- function(data, s, seed = 123) {
   # split into train and test
@@ -12,18 +16,18 @@ split_data <- function(data, s, seed = 123) {
   )
 }
 
+# function to fit regularised regression model with tuning
 fit_reg <- function(y,
-                           s, # specify strata for cross-validation
-                           data,
-                           mixture_range, # proportion of L1 regularization
-                           penalty_range, # strength of regularization
-                           seed = 123) {
+                    s, # specify strata for cross-validation
+                    data,
+                    mixture_range, # proportion of L1 regularization
+                    penalty_range, # strength of regularization
+                    seed = 123) {
   set.seed(seed)
-  
   # create k-fold cross validation set on training with 10 folds
   data_folds <- vfold_cv(data, v=10, strata = s)
   
-  if (length(mixture_range) == 1) { # if strictly lasso or ridge
+  if (length(mixture_range) == 1) { # if strictly lasso (1) or ridge (0)
     reg_spec <- linear_reg(penalty = tune(), mixture = mixture_range) |>
       set_mode('regression') |>
       set_engine('glmnet')
@@ -59,7 +63,6 @@ fit_reg <- function(y,
       mixture(range = mixture_range),
       size = 50
     )
-    
   }
   
   # perform tuning
@@ -69,7 +72,7 @@ fit_reg <- function(y,
     grid = search_space
   )
   
-  # select best hyperparameters
+  # select best hyperparameters with rmse
   best_params <- select_best(tune_res, metric = "rmse")
   
   # refit final model with best params
@@ -83,10 +86,11 @@ fit_reg <- function(y,
 }
 
 
-
-data <- read_rds('final_merged_data_cleaned.RDS')
+# load data ---------------------------------------------------------------
+data <- from_cache("final_merged_data_clean", "clean")
 # geog_cols 
 geog_cols <- c('local_authority_code', 'local_authority_name', 'lsoa_code', 'lsoa_name')
+
 # random sample of data
 set.seed(123)
 data_sample <- data %>%
@@ -94,20 +98,25 @@ data_sample <- data %>%
   sample_frac(0.01) %>% # sample 10% from each year
   ungroup()
 
+# split into train and test
 train_test_data <- split_data(data_sample, 'year')
 data_train <- train_test_data$train_data
 data_test <- train_test_data$test_data
 
+
+# fit model ---------------------------------------------------------------
+# fit model with tuning
 reg_mod <- fit_reg('median_price', 'year', 
                    data_train,
-                   mixture_range = 1,
+                   mixture_range = c(0,1),
                    penalty_range = c(1e-6, 0.1))
 
+# extract results
 tune_res <- reg_mod[[1]]
 reg_mod_fit <- reg_mod[[2]]
 best_params <- reg_mod[[3]]
 
-# RMSE plot
+# 1. RMSE plot
 tune_res |> 
   collect_metrics() |> 
   filter(.metric == 'rmse') |>
@@ -122,10 +131,12 @@ tune_res |>
        title = "Tuning Results: RMSE vs Parameters") +
   scale_color_manual(values = c("penalty" = "#C43535", "mixture" = "#66BBBB")) +  
   theme(strip.text = element_text(size = 11, face = "bold")) 
-  
+
+
+# 2. Get non-zero coefficients  
 non_zero_coefs <- tidy(reg_mod_fit) |> filter(abs(estimate) > 0)
-# write to csv
-write_csv(non_zero_coefs, 'reg_non_zero_coefs.csv')
+#write_csv(non_zero_coefs, file.path(dir$output, 'reg', 'reg_non_zero_coefs.csv'))
+
 # plot non-zero coefficients
 important_features <- non_zero_coefs |>
   filter(term != '(Intercept)') |>
@@ -143,7 +154,8 @@ important_features <- non_zero_coefs |>
 
 important_features
 
-## evaluation
+
+# evaluation --------------------------------------------------------------
 # predict on test set
 predictions <- predict(reg_mod_fit, data_test) |>
   bind_cols(data_test) |>
@@ -152,6 +164,8 @@ predictions <- predict(reg_mod_fit, data_test) |>
          .pred = exp(.pred))
 
 test_predictions <- augment(reg_mod_fit, data_test)
+# extract evaluation metrics
 evaluation_metrics <- test_predictions |>
   metrics(truth = median_price, estimate = .pred)
-write_csv(evaluation_metrics, 'reg_evaluation_metrics.csv')
+
+#write_csv(evaluation_metrics, file.path(dir$output, 'reg', 'reg_evaluation_metrics.csv'))

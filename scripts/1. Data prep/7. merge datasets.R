@@ -76,7 +76,5 @@ final_merged_data <- ctsop_with_prices_journey |>
   left_join(hh_earnings_with_lsoa, by = c("lsoa_code", "year")) |>
   left_join(macro_pop_lsoa, by = c("lsoa_code", "year"))
 
-
-final_merged_data_5y <- final_merged_data |>
-filter(year %in% c('2019', '2020', '2021', '2022', '2023')) |>
-droplevels()
+# save to cache
+to_cache(final_merged_data, "final_merged_data", "clean")
