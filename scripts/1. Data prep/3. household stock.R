@@ -1,11 +1,11 @@
-## cleaning script for household characteristics
+## cleaning household characteristics
 ## data sources:
 ## 1. housing stock
     # - count of properties by type
     # - build period
 ## 2. household earnings
     # - annual weekly household income before housing costs by MSOA
-keep <- ls()
+
 ## unzipping files needed
 ## =====================================================================================================================
 
@@ -98,7 +98,5 @@ to_cache(ctsop3_1, "ctsop3_1", "clean")
 to_cache(ctsop4_1, "ctsop4_1", "clean")
 to_cache(ctsop_merged, "ctsop_merged", "clean")
 
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()
 
 

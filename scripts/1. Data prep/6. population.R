@@ -1,8 +1,6 @@
-## cleaning population scripts
+## cleaning population data ---------------------------------------------
 
-keep <- ls()
-
-# Annual midyear population estimates by local authority, sex and age
+# annual midyear population estimates by local authority, sex and age
 # ---------------------------------------------------------------------
 
 data <- read_xlsx(file.path(dir$raw, "population", "myebtablesenglandwales20112022v3.xlsx"), sheet = "MYEB1 (2021 Geography)", skip = 1) |>
@@ -17,6 +15,3 @@ filter(year >= 2014)  |>
 
 # save to cache
 to_cache(data, "population", "clean")
-
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()

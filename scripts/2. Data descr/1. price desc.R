@@ -107,7 +107,7 @@ price_region_table <- data |>
   summarise(avg_median_price = mean(median_price, na.rm = TRUE)) |>
   arrange(region, year)
 
-#write.csv(price_region_table, file.path(dir$output, desc, "price_region_table.csv"))
+#write.csv(price_region_table, file.path(dir$output, 'desc', "price_region_table.csv"))
 ## visualising correlations with price 
 ## ===============================================================================
 
@@ -125,7 +125,7 @@ vars_corr <- median_corr  |>
 mutate(corr_int = ifelse(abs(corr) >= 0.2, 1, 0))  |>
 filter(corr_int == 1)
 
-#write.csv(vars_corr, file.path(dir$output, desc, 'vars_corr_price.csv'))))
+#write.csv(vars_corr, file.path(dir$output, 'desc', 'vars_corr_price.csv'))))
 
 ## plotting relationship between annual income and median price
 ## ====================================================================

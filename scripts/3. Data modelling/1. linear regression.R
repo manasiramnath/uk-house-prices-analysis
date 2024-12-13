@@ -40,9 +40,9 @@ data <- from_cache("final_merged_data_cleaned", "clean")
 correlations <- read_csv(file.path(dir$output, 'desc', 'correlations.csv'))
 # random sample of data
 set.seed(123)
-data_sample <- data %>%
-  group_by(year) %>%
-  sample_frac(0.01) %>% # sample 10% from each year
+data_sample <- data |>
+  group_by(year) |>
+  sample_frac(0.01) |> 
   ungroup()
 
 

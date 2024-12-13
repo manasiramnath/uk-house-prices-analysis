@@ -113,7 +113,7 @@ data <- data |>
 #  filter(corr > 0.7) |>
 #  select(-p_value)
 
-#write correlations to csv
+# write correlations to csv
 #write_csv(correlations, file.path(dir$output, 'desc', 'allcorrelations.csv'))
 #write_csv(cor_var, file.path(dir$output, 'desc', 'correlations.csv'))
 # read high correlations

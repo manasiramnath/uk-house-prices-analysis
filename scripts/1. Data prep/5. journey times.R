@@ -1,7 +1,6 @@
-## journey times data
-## =====================================================================================================================
-keep <- ls()
 
+# cleaning journey times data ---------------------------------------------
+## =========================================================================
 # function to extract the ods file and take relevant columns
 extract_journey_times <- function(file_path, skip, col_prefix) {
   # read the data
@@ -61,6 +60,3 @@ journey_times <- sec_sch_clean |>
 
 # save to cache
 to_cache(journey_times, "journey_times", "clean")
-
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()

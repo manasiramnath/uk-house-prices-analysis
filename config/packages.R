@@ -8,9 +8,8 @@ conflicts_prefer(dplyr::filter,
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   readODS, installr, tidyverse, zip, janitor, readxl, writexl, openxlsx,
-  haven, labelled, collinear, car, e1071, tidymodels, plm,
-  readr, broom.mixed, lmtest, multiwayvcov, tidypredict, fe, ggplot2,
-  Metrics, caret, gridExtra, foreach, doParallel, plotly,
+  car, tidymodels, plm, readr, broom.mixed, lmtest, multiwayvcov, tidypredict, 
+  fe, ggplot2, Metrics, caret, gridExtra, foreach, plotly,
   sp, sf, tmap, RColorBrewer, stargazer
 )
 

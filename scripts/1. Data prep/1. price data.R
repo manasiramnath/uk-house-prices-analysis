@@ -1,7 +1,4 @@
 # cleans median price data
-
-keep <- ls()
-
 ## unzip data 
 ## =====================================================================================================================
 median_raw <- read_xls(file.path(dir$raw, "median_price.xls"), sheet = "1a", skip = 5)|>
@@ -29,6 +26,3 @@ skimr::skim(data)
 ## =====================================================================================================================
 ## save to cache
 to_cache(data, "median_price", "clean")
-
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()

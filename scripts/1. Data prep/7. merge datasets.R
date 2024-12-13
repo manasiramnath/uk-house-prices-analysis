@@ -1,6 +1,6 @@
 ## merging datasets with LSOA granularity
 ## =====================================================================================================================
-# 1. median_price and ctsop_merged
+# median_price and ctsop_merged
 median_price <- from_cache("median_price", "clean")
 ctsop_merged <- from_cache("ctsop_merged", "clean")
 
@@ -17,7 +17,7 @@ common_columns <- intersect(names(median_price), names(ctsop_merged))
 ctsop_with_prices <- median_price |>
   inner_join(ctsop_merged, by = c("lsoa_code", "year"))
 
-# 2. data1 and journey_times
+# ctsop_with_prices and journey_times
 journey_times <- from_cache("journey_times", "clean")
 ctsop_with_prices_journey <- ctsop_with_prices |>
   inner_join(journey_times, by = "lsoa_code") |>
@@ -25,7 +25,7 @@ ctsop_with_prices_journey <- ctsop_with_prices |>
 
 ## merging datasets with LAD granularity
 ## =====================================================================================================================
-# 3. macro_data and population
+# macro_data and population
 macro <- from_cache("macro_data", "clean")
 population <- from_cache("population", "clean")
 population <- population |>

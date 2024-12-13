@@ -93,9 +93,9 @@ geog_cols <- c('local_authority_code', 'local_authority_name', 'lsoa_code', 'lso
 
 # random sample of data
 set.seed(123)
-data_sample <- data %>%
-  group_by(year) %>%
-  sample_frac(0.01) %>% # sample 10% from each year
+data_sample <- data |>
+  group_by(year) |>
+  sample_frac(0.01) |> # sample 10% from each year
   ungroup()
 
 # split into train and test

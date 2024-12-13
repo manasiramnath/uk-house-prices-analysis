@@ -3,8 +3,7 @@
 # aggregating data to local authority -------------------------------------
 # rationale: too many groups if by LSOA, but we still want to see geographic variation
 
-# Aggregating data to local authority -------------------------------------
-# Subset data to important features
+# subset data to important features
 non_zero_coefs <- read.csv(file.path(dir$output, 'reg', 'reg_non_zero_coefs.csv'))
 data <- from_cache("final_merged_data_clean", "clean")
 
@@ -17,7 +16,7 @@ geog_cols <- c('local_authority_code', 'local_authority_name', 'lsoa_code', 'lso
 data <- data |> 
   select(all_of(impt_features), all_of(geog_cols), year, median_price)
 
-# Method of aggregation
+# method of aggregation
 sum_vars <- setdiff(
   colnames(data),
   c("ssp_tt", "hosp_p_tt", "food_p_tt", "town_p_tt", 
@@ -29,17 +28,9 @@ sum_vars <- setdiff(
 mean_vars <- c("median_price", "ssp_tt", "hosp_p_tt", "food_p_tt", "town_p_tt", 
                "net_annual_income_before_housing_costs", 'avg_mortgage_fixed', 'unemployment_rate')
 
-# aggregated_data <- data %>%
-#   group_by(region, local_authority_name, year) %>%
-#   summarise(
-#     across(all_of(sum_vars), sum, na.rm = TRUE),   
-#     across(all_of(mean_vars), mean, na.rm = TRUE) 
-#   ) %>%
-#   ungroup()
-
 .groups = "keep" # Preserves the grouping in summarise
-aggregated_data <- data %>%
-  group_by(region, local_authority_name, year) %>%
+aggregated_data <- data |>
+  group_by(region, local_authority_name, year) |>
   summarise(
     across(all_of(sum_vars), sum, na.rm = TRUE),
     across(all_of(mean_vars), mean, na.rm = TRUE),
@@ -55,6 +46,7 @@ fixed_model <- plm(median_price ~ . - local_authority_name - year -region, data 
 random_model <- plm(median_price ~ . - local_authority_name - year -region, data = panel_data, model = "random")
 hausman_test <- phtest(fixed_model, random_model)
 print(hausman_test)
+
 
 # two-way: unit (local authority) and time (year) fixed effects
 # use all predictors except the dependent variable and identifiers
@@ -84,6 +76,7 @@ clustered_se <- vcovHC(fe_m, type = "HC1", cluster = "group")
 clustered_fe_m <- coeftest(fe_m, vcov = clustered_se)
 
 clustered_fe_m
+
 ## visualising residuals
 ## =============================================================================
 # get residuals from the fixed effects model
@@ -146,7 +139,7 @@ all_properties_interactions <- region_interactions[grep("all_properties:region",
 all_properties_df <- data.frame(
   Region = rownames(all_properties_interactions),
   Coefficient = all_properties_interactions[, "Estimate"]
-) %>%
+) |>
   mutate(Region = gsub("all_properties:region", "", Region))
 
 # plot the interaction effect
@@ -173,8 +166,8 @@ net_income_interactions <- region_interactions[grep(":net_annual_income_before_h
 net_income_interactions_df <- data.frame(
   Region = rownames(net_income_interactions),
   Coefficient = net_income_interactions[, "Estimate"]
-) %>%
-  mutate(Region = gsub(":net_annual_income_before_housing_costs", "", Region)) %>%
+) |>
+  mutate(Region = gsub(":net_annual_income_before_housing_costs", "", Region)) |>
   mutate(Region = gsub("region", "", Region))
 
 # plot net income coefficients
@@ -200,8 +193,8 @@ unemployment_interactions <- region_interactions[grep(":unemployment_rate", rown
 unemployment_interactions_df <- data.frame(
   Region = rownames(unemployment_interactions),
   Coefficient = unemployment_interactions[, "Estimate"]
-) %>%
-  mutate(Region = gsub(":unemployment_rate", "", Region)) %>%
+) |>
+  mutate(Region = gsub(":unemployment_rate", "", Region)) |>
   mutate(Region = gsub("region", "", Region))
 
 # plot unemployment rate coefficients

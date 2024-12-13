@@ -1,5 +1,5 @@
 
-# cleaning script for data on the economy by year
+# cleans data on the economy by year
 # data sources:
 # 1. bank of england bank &  mortgage rates
 # 2. unemployment rate
@@ -8,8 +8,9 @@
 
 keep <- ls()
 
-## bank of england bank & mortgage rates
-## =====================================================================================================================
+
+# bank of england bank & mortgage rates ========================================
+# ==============================================================================
 rates_raw <- read_xlsx(file.path(dir$raw, 'macro', 'rates.xlsx'), skip = 4) |> clean_names()
 
 # cleaning
@@ -33,9 +34,11 @@ summarise(avg_mortgage_var = mean(mortgage_var, na.rm = TRUE),
 
 skimr::skim(rates_cleaned)
 
-## unemployment rate
-## =====================================================================================================================
-unemployment_raw <- read.csv(file.path(dir$raw, 'macro', 'unemployment_rates.csv')) |> clean_names()
+
+# unemployment rate ============================================================
+# =============================================================================
+unemployment_raw <- read.csv(file.path(dir$raw, 'macro', 'unemployment_rates.csv')) 
+|> clean_names()
 
 # cleaning
 unemployment_cleaned <- unemployment_raw |>
@@ -63,8 +66,9 @@ mutate(area = str_trim(area))
 
 skimr::skim(unemployment_cleaned)
 
-## consumer price index
-## =====================================================================================================================
+
+# consumer price index =========================================================
+## =============================================================================
 # loading CPIH detailed indices annual averages: 2008 to 2023
 cpi_raw <- read_xlsx(file.path(dir$raw, 'macro', 'cpi.xlsx'), sheet ='Table 9', skip = 5, col_names = FALSE) |> clean_names()
 
@@ -89,8 +93,8 @@ filter(year >= 2014)
 
 skimr::skim(cpi_cleaned)
 
-## merging macro data
-## =====================================================================================================================
+
+# merging macro data ------------------------------------------------------
 # merge on year
 macro_data <- rates_cleaned |>
 left_join(unemployment_cleaned, by = c('year')) |>
@@ -100,6 +104,3 @@ left_join(cpi_cleaned, by = c('year'))
 ## =====================================================================================================================
 ## save to cache
 to_cache(macro_data, "macro_data", "clean")
-
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()

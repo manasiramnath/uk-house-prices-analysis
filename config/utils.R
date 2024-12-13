@@ -27,23 +27,3 @@ from_output <- function(name, folder){
 }
 
 
-# removing outliers based on percentile
-remove_outliers_percentile <- function(df, trim_pct) {
-  
-  # Identify numeric columns
-  numeric_cols <- df %>% select(where(is.numeric)) %>% colnames()
-
-    
-  # Remove outliers only for non-normally distributed variables
-  for (variable in numeric_cols) {
-    lower_bound <- quantile(df[[variable]], trim_pct / 2, na.rm = TRUE)
-    upper_bound <- quantile(df[[variable]], 1 - trim_pct / 2, na.rm = TRUE)
-    
-    # Filter data to exclude outliers for this column
-    df <- df %>% filter(df[[variable]] >= lower_bound & df[[variable]] <= upper_bound)
-  }
-  
-  return(df)
-}
-
-

@@ -22,6 +22,3 @@ hh_earnings <- hh_earnings  |>
 skimr::skim(hh_earnings)
 # save to cache
 to_cache(hh_earnings, "hh_earnings", "clean")
-
-## clean environment
-rm(list=setdiff(setdiff(ls(), keep), lsf.str())); gc()
