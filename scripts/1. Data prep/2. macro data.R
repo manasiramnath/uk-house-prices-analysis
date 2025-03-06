@@ -19,8 +19,8 @@ rename(mortgage_var = mortgages_of_which_variable_rate,
        mortgage_fixed = mortgages_of_which_fixed_rate) |>
 # convert date to date type
 mutate(date = as.Date(date, format = '%d/%m/%Y')) |>
-# filter dates before 31st Mar 2014
-filter(date >= '2014-03-31') |>
+# filter dates before 31st Mar 2021
+filter(date >= '2021-03-31') |>
 # extract just year  |>
 mutate(year = year(date)) |> 
 # get average mortgage rates and bank rate by year
@@ -37,8 +37,7 @@ skimr::skim(rates_cleaned)
 
 # unemployment rate ============================================================
 # =============================================================================
-unemployment_raw <- read.csv(file.path(dir$raw, 'macro', 'unemployment_rates.csv')) 
-|> clean_names()
+unemployment_raw <- read.csv(file.path(dir$raw, 'macro', 'unemployment_rates.csv')) |> clean_names()
 
 # cleaning
 unemployment_cleaned <- unemployment_raw |>

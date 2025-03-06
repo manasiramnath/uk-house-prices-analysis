@@ -13,8 +13,8 @@ pivot_longer(cols = starts_with("year"), names_to = "year", values_to = "median_
 filter(str_detect(year, "mar"))  |>
 # create just year column which is the numeric part of the year column
 mutate(year = as.numeric(str_extract(year, "\\d+"))) |>
-# take last 10 years
-filter(year >= 2014) |>
+# take last 3 years 
+filter(year >= 2021) |>
 # label NAs
 mutate(median_price = ifelse(median_price == ":", NA, median_price)) |>
 # convert to numeric
